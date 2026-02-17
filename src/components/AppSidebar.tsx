@@ -1,15 +1,5 @@
-import {
-  LayoutDashboard,
-  BarChart3,
-  CalendarRange,
-  ClipboardList,
-  Package,
-  Cpu,
-  FileText,
-  Settings,
-  Factory,
-} from "lucide-react";
-import { NavLink } from "@/components/NavLink";
+import { LayoutDashboard, BarChart3, CalendarRange, ClipboardList, Factory } from 'lucide-react';
+import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
   SidebarContent,
@@ -19,17 +9,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 
 const navItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "RCCP", url: "/rccp", icon: BarChart3 },
-  { title: "Scheduler", url: "/scheduler", icon: CalendarRange },
-  { title: "Planbord (2-day)", url: "/planbord", icon: ClipboardList },
-  { title: "Orders", url: "/orders", icon: Package },
-  { title: "Machines", url: "/machines", icon: Cpu },
-  { title: "Reports", url: "/reports", icon: FileText },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
+  { title: 'RCCP', url: '/rccp', icon: BarChart3 },
+  { title: 'Scheduler', url: '/scheduler', icon: CalendarRange },
+  { title: 'Planbord', url: '/planbord', icon: ClipboardList },
 ];
 
 export function AppSidebar() {
@@ -52,7 +38,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
                       to={item.url}
-                      end={item.url === "/"}
+                      end={item.url === '/'}
                       className="hover:bg-sidebar-accent"
                       activeClassName="bg-sidebar-accent text-primary font-medium"
                     >
