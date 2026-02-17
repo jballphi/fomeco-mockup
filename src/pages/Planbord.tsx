@@ -376,9 +376,18 @@ export default function Planbord() {
     return issues;
   }, [orders]);
 
+  // Separate parked and active orders
+  const parkedOrders = useMemo(() => {
+    return orders.filter((o) => o.status === 'parked');
+  }, [orders]);
+
+  const activeOrders = useMemo(() => {
+    return orders.filter((o) => o.status !== 'parked');
+  }, [orders]);
+
   // Apply filters and only show orders within visible timerange
   const filteredOrders = useMemo(() => {
-    let filtered = orders.filter((o) => {
+    let filtered = activeOrders.filter((o) => {
       // Filter out orders completely outside visible range
       const orderEndHour = o.startHour + o.durationHours;
       return o.startHour < hoursToShow && orderEndHour > 0;
@@ -404,7 +413,7 @@ export default function Planbord() {
     }
 
     return filtered;
-  }, [orders, hoursToShow, showLateOnly, filterGroup, filterMachine, filterOrderNumber]);
+  }, [activeOrders, hoursToShow, showLateOnly, filterGroup, filterMachine, filterOrderNumber]);
 
   // Get machine options based on selected group(s)
   const availableMachines = useMemo(() => {
@@ -454,6 +463,32 @@ export default function Planbord() {
       );
     }
   }, [selectedOrder]);
+
+  // Park order (move to parking lane)
+  const handleParkOrder = useCallback(
+    (order: SchedulerOrder) => {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, status: 'parked' as OrderStatus } : o))
+      );
+      if (selectedOrder?.id === order.id) {
+        setSelectedOrder((prev) => (prev ? { ...prev, status: 'parked' as OrderStatus } : null));
+      }
+    },
+    [selectedOrder]
+  );
+
+  // Unpark order (restore to planning with default status)
+  const handleUnparkOrder = useCallback(
+    (order: SchedulerOrder) => {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, status: 'planned' as OrderStatus } : o))
+      );
+      if (selectedOrder?.id === order.id) {
+        setSelectedOrder((prev) => (prev ? { ...prev, status: 'planned' as OrderStatus } : null));
+      }
+    },
+    [selectedOrder]
+  );
 
   // Purge order (compact)
   const handlePurgeOrder = useCallback((order: SchedulerOrder) => {
@@ -834,6 +869,17 @@ export default function Planbord() {
               </div>
 
               <div className="flex items-center gap-2">
+                <Separator orientation="vertical" className="h-5" />
+                {/* Parking lane button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={() => setParkingDrawerOpen(true)}
+                >
+                  <ParkingSquare className="h-3 w-3" />
+                  Parkeerstrook ({parkedOrders.length})
+                </Button>
                 <Separator orientation="vertical" className="h-5" />
                 {/* Submit planning button - PLANBORD SPECIFIC */}
                 <Button
@@ -1276,6 +1322,17 @@ export default function Planbord() {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="w-full gap-2"
+                    onClick={() => {
+                      handleParkOrder(selectedOrder);
+                      setSelectedOrder(null);
+                    }}
+                  >
+                    <ParkingSquare className="h-4 w-4" /> Parkeer Order
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="w-full gap-2 text-destructive"
                     onClick={() => {
                       handleDeleteOrder(selectedOrder);
@@ -1527,6 +1584,72 @@ export default function Planbord() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Parkeerstrook (Parking Lane) Drawer */}
+      <Sheet open={parkingDrawerOpen} onOpenChange={setParkingDrawerOpen}>
+        <SheetContent side="right" className="w-96">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <ParkingSquare className="h-5 w-5" />
+              Parkeerstrook ({parkedOrders.length})
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-6 space-y-3">
+            {parkedOrders.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                <ParkingSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>Geen geparkeerde orders</p>
+              </div>
+            ) : (
+              parkedOrders.map((order) => (
+                <Card key={order.id} className="bg-muted/50">
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm truncate">
+                          Order {order.orderNumber}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {order.operation}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="bg-muted shrink-0">
+                        {statusLabels.parked}
+                      </Badge>
+                    </div>
+                    <Separator />
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <div className="text-muted-foreground">Producttype:</div>
+                      <div className="font-medium">{order.productType}</div>
+                      <div className="text-muted-foreground">Hoeveelheid:</div>
+                      <div className="font-medium">{order.quantity.toLocaleString()} st</div>
+                      <div className="text-muted-foreground">Machine:</div>
+                      <div className="font-medium">{order.machine}</div>
+                      <div className="text-muted-foreground">Deadline:</div>
+                      <div className="font-medium">
+                        {new Date(order.deadline).toLocaleDateString('nl-NL', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                        })}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-2"
+                      onClick={() => handleUnparkOrder(order)}
+                    >
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Terugplaatsen
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
