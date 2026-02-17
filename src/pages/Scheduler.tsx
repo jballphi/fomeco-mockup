@@ -943,6 +943,16 @@ export default function Scheduler() {
                 variant="outline"
                 size="sm"
                 className="h-7 text-xs gap-1.5"
+                onClick={handleAutoPlan}
+              >
+                <Sparkles className="h-3 w-3" />
+                Auto-plan
+              </Button>
+              <Separator orientation="vertical" className="h-5" />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1.5"
                 onClick={() => setParkingDrawerOpen(true)}
               >
                 <ParkingSquare className="h-3 w-3" />

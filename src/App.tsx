@@ -18,7 +18,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename="/fomeco-mockup">
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
