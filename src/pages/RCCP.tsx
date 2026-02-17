@@ -130,6 +130,7 @@ const generateCapacityData = (
 
     // Calculate capacity per machine
     let totalGroupCapacityWithoutStaffing = 0;
+    let totalAvailableCapacity = 0;
     groupMachines.forEach((machine) => {
       const { capacityModifier, shiftCount } = getEffectiveCapacity(machine, periodStartDate, overrides);
       const efficiency = capacityModifier / 100;
@@ -138,7 +139,11 @@ const generateCapacityData = (
 
       period[machine.id] = Math.round(machineCapacity);
       totalGroupCapacityWithoutStaffing += baseCapacity;
+      totalAvailableCapacity += machineCapacity;
     });
+
+    // Store total available capacity as a field for the line chart
+    period.availableCapacity = Math.round(totalAvailableCapacity);
 
     // Mock required data as group total (NOT affected by staffing - this is the actual demand)
     const requiredRatio = 0.85 + Math.random() * 0.35;
@@ -157,7 +162,7 @@ export default function RCCP() {
   const [dateTo, setDateTo] = useState('2026-04-12');
   const [selectedGroup, setSelectedGroup] = useState<string>(machineGroups[0].id);
   const [visibleGroups, setVisibleGroups] = useState<Set<string>>(
-    new Set([...machines.map((m) => m.id), 'requiredCapacity'])
+    new Set(['availableCapacity', 'requiredCapacity'])
   );
   const [selectedMachine, setSelectedMachine] = useState<string>(machines[0].id);
   const [machineConfigs, setMachineConfigs] = useState<Map<string, Machine>>(new Map(machines.map((m) => [m.id, m])));
@@ -173,7 +178,7 @@ export default function RCCP() {
 
   const handleLegendClick = (data: any) => {
     const itemId = data.dataKey;
-    if (itemId && (machines.some((m) => m.id === itemId) || itemId === 'requiredCapacity')) {
+    if (itemId && (itemId === 'availableCapacity' || itemId === 'requiredCapacity')) {
       toggleItem(itemId);
     }
   };
@@ -454,40 +459,28 @@ export default function RCCP() {
                       wrapperStyle={{ fontSize: 11, cursor: 'pointer' }}
                       onClick={handleLegendClick}
                     />
-                    {machines
-                      .filter((m) => m.groupId === selectedGroup)
-                      .map((machine, idx) => {
-                        const selectedGroupData = machineGroups.find(
-                          (g) => g.id === selectedGroup
-                        );
-                        const baseColor = selectedGroupData?.color || '#8884d8';
-                        // Create variations of the group color for different machines
-                        const opacity = 0.4 + idx * 0.2;
-                        return visibleGroups.has(machine.id) ? (
-                          <Bar
-                            key={machine.id}
-                            dataKey={machine.id}
-                            name={machine.name}
-                            stackId="capacity"
-                            fill={baseColor}
-                            fillOpacity={opacity}
-                          />
-                        ) : null;
-                      })}
                     {visibleGroups.has('requiredCapacity') && (
-                      <Line
-                        type="monotone"
+                      <Bar
                         dataKey="requiredCapacity"
                         name="Vereiste Capaciteit"
-                        stroke="#ef4444"
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
+                        fill="#ef4444"
+                        fillOpacity={0.7}
+                      />
+                    )}
+                    {visibleGroups.has('availableCapacity') && (
+                      <Line
+                        type="monotone"
+                        dataKey="availableCapacity"
+                        name="Beschikbare Capaciteit"
+                        stroke={machineGroups.find((g) => g.id === selectedGroup)?.color || '#8884d8'}
+                        strokeWidth={3}
+                        dot={{ r: 4 }}
                       />
                     )}
                   </ComposedChart>
                 </ResponsiveContainer>
                 <div className="text-xs text-muted-foreground mt-2 text-center">
-                  Klik op de legenda om machines in/uit te schakelen
+                  Klik op de legenda om beschikbare/vereiste capaciteit in/uit te schakelen
                 </div>
               </CardContent>
             </Card>
